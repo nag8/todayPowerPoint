@@ -1,3 +1,6 @@
 
 *.sh
 *.ini
+*.txt
+.DS_Store
+*.csv

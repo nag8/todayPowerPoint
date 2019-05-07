@@ -1,11 +1,14 @@
 # coding: UTF-8
 
 from pptx import Presentation
+from pptx.util import Pt
+from pptx.enum.text import PP_ALIGN
 from bs4 import BeautifulSoup
 import configparser
 import requests
 import feedparser
 import datetime
+import csv
 
 
 # メイン処理
@@ -14,6 +17,7 @@ def main():
     # 参照
     # https://python-pptx.readthedocs.io/en/latest/user/table.html
     # https://qiita.com/hujuu/items/b0339404b8b0460087f9
+    # https://stackoverflow.com/questions/40343921/python-pptx-change-entire-table-font-size
 
     # 設定ファイル取得
     iniFile = getIniFile()
@@ -34,17 +38,17 @@ def createPP(iniFile):
     prs = Presentation(iniFile.get('settings', 'IN'))
 
     # htmlから情報を取得
-    strSchedule = getSchedule(iniFile)
+    inputTable = getInputTable(iniFile)
 
     # 表を変更
-    editTable(prs.slides[0].shapes[0].table, prs.slides[1].shapes[1].table, strSchedule)
+    editPPTable(iniFile, prs.slides[0].shapes[0].table, prs.slides[1].shapes[1].table, inputTable)
 
     # ファイルを保存
     prs.save(iniFile.get('settings', 'OUT') + judgeFileName() + '.pptx')
 
 
 # スケジュールを取得
-def getSchedule(iniFile):
+def getInputTable(iniFile):
 
     # 保存したhtmlを取得
     with open(iniFile.get('settings', 'HTML'), encoding="shift_JIS", errors='ignore') as f:
@@ -52,26 +56,80 @@ def getSchedule(iniFile):
 
     #要素を抽出
     soup = BeautifulSoup(html, 'lxml')
-    
-    # テーブルを指定
-    table = soup.findAll("table")[0]
-    trs = table.findAll("tr")
-    print(trs)
 
-    return True
+    # テーブルを指定
+    return soup.findAll("table")[0]
+
+# セルのフォントサイズを変更
+def changeFontSize(cell, size):
+    for paragraph in cell.text_frame.paragraphs:
+        for run in paragraph.runs:
+            run.font.size = Pt(size)
+
+        # 中央そろえにもする
+        paragraph.alignment = PP_ALIGN.CENTER
 
 
 # テーブルを修正
-def editTable(table1, table2, strSchedule):
-    # 展示ギャラリー
-    table1.cell(1, 2).text = 'test'
+def editPPTable(iniFile, table1, table2, inputTable):
+    # 要素を取得
+    tdList = inputTable.findAll("td", attrs = {"class": "p11pa2"})
 
-    # 講座研修室
-    table1.cell(2, 2).text = 'test21'
+    # 設定に必要なcsvを取得
+    directory = getDirectory(iniFile.get('settings', 'CSV'))
+
+    for td in tdList:
+
+        # 行番号を取得。なければ飛ばす
+        if directory[td.text[:3]][1] != '':
+            rowNum = int(directory[td.text[:3]][1])
+
+            contents = td.parent.findAll("td", attrs = {"class": "p11"})
+            for i,content in enumerate(contents):
+
+                print(td.text[:3])
+                if directory[td.text[:3]][2] == '1':
+                    changeTable = table1
+                    columnNum   = 2 + i
+
+                else:
+                    changeTable = table2
+                    columnNum   = 1 + i
+
+                print(td.text[:3])
+                changeCell = changeTable.cell(rowNum, columnNum)
+                changeCell.text = chageStr(content.get_text('.').split('.'))
+                changeFontSize(changeCell, 10)
 
 
-    table2.cell(5, 3).text = 'test55'
-    table2.cell(1, 3).merge(table2.cell(2, 3))
+    # table2.cell(1, 3).merge(table2.cell(2, 3))
+
+# CSVを取得
+def chageStr(strList):
+
+    if len(strList) >= 2:
+        return strList[1] + '\n（' + strList[0] + '　様）'
+
+    elif len(strList) == 1:
+        return strList[0]
+
+    else:
+        return 'error'
+
+
+# CSVを取得
+def getDirectory(csvPath):
+
+    directory = {}
+
+    with open(csvPath, 'r') as f:
+        reader = csv.reader(f)
+
+        for row in reader:
+            directory[row[0]] = [row[1],row[2],row[3]]
+
+    return directory
+
 
 
 # ファイルネームを生成
