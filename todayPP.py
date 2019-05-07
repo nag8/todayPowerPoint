@@ -1,6 +1,8 @@
 # coding: UTF-8
 
 from pptx import Presentation
+from pptx.util import Pt
+from pptx.enum.text import PP_ALIGN
 from bs4 import BeautifulSoup
 import configparser
 import requests
@@ -15,6 +17,7 @@ def main():
     # 参照
     # https://python-pptx.readthedocs.io/en/latest/user/table.html
     # https://qiita.com/hujuu/items/b0339404b8b0460087f9
+    # https://stackoverflow.com/questions/40343921/python-pptx-change-entire-table-font-size
 
     # 設定ファイル取得
     iniFile = getIniFile()
@@ -57,6 +60,15 @@ def getInputTable(iniFile):
     # テーブルを指定
     return soup.findAll("table")[0]
 
+# セルのフォントサイズを変更
+def changeFontSize(cell, size):
+    for paragraph in cell.text_frame.paragraphs:
+        for run in paragraph.runs:
+            run.font.size = Pt(size)
+
+        # 中央そろえにもする
+        paragraph.alignment = PP_ALIGN.CENTER
+
 
 # テーブルを修正
 def editPPTable(iniFile, table1, table2, inputTable):
@@ -68,29 +80,39 @@ def editPPTable(iniFile, table1, table2, inputTable):
 
     for td in tdList:
 
-        # 行番号を取得
-        tdNum = int(directory[td.text[:3]][1])
+        # 行番号を取得。なければ飛ばす
+        if directory[td.text[:3]][1] != '':
+            rowNum = int(directory[td.text[:3]][1])
 
-        contents = td.parent.findAll("td", attrs = {"class": "p11"})
-        for i,content in enumerate(contents):
+            contents = td.parent.findAll("td", attrs = {"class": "p11"})
+            for i,content in enumerate(contents):
 
-            if directory[td.text[:3]][2] == '1':
-                changeTable = table1
-            else:
-                changeTable = table2
+                print(td.text[:3])
+                if directory[td.text[:3]][2] == '1':
+                    changeTable = table1
+                    columnNum   = 2 + i
 
-            changeTable.cell(tdNum, 2 + i).text = chageStr(content.get_text('.').split('.'))
+                else:
+                    changeTable = table2
+                    columnNum   = 1 + i
+
+                print(td.text[:3])
+                changeCell = changeTable.cell(rowNum, columnNum)
+                changeCell.text = chageStr(content.get_text('.').split('.'))
+                changeFontSize(changeCell, 10)
+
 
     # table2.cell(1, 3).merge(table2.cell(2, 3))
 
 # CSVを取得
 def chageStr(strList):
-    print(strList)
 
     if len(strList) >= 2:
         return strList[1] + '\n（' + strList[0] + '　様）'
+
     elif len(strList) == 1:
         return strList[0]
+
     else:
         return 'error'
 
