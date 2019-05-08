@@ -44,10 +44,10 @@ def createPP(iniFile):
     editPPTable(iniFile, prs.slides[0].shapes[0].table, prs.slides[1].shapes[1].table, inputTable)
 
     # ファイルを保存
-    prs.save(iniFile.get('settings', 'OUT') + judgeFileName() + '.pptx')
+    prs.save(iniFile.get('settings', 'OUT') + createFileName() + '.pptx')
 
 
-# スケジュールを取得
+# データ元の情報を取得
 def getInputTable(iniFile):
 
     # 保存したhtmlを取得
@@ -60,17 +60,17 @@ def getInputTable(iniFile):
     # テーブルを指定
     return soup.findAll("table")[0]
 
-# セルのフォントサイズを変更
-def changeFontSize(cell, size):
+# セルのフォントサイズを変更して、中央揃えにする
+def changeLayout(cell, size):
     for paragraph in cell.text_frame.paragraphs:
         for run in paragraph.runs:
             run.font.size = Pt(size)
 
-        # 中央そろえにもする
+        # 中央揃えにもする
         paragraph.alignment = PP_ALIGN.CENTER
 
 
-# テーブルを修正
+# パワーポイントのテーブルを修正
 def editPPTable(iniFile, table1, table2, inputTable):
     # 要素を取得
     tdList = inputTable.findAll("td", attrs = {"class": "p11pa2"})
@@ -87,7 +87,7 @@ def editPPTable(iniFile, table1, table2, inputTable):
             contents = td.parent.findAll("td", attrs = {"class": "p11"})
             for i,content in enumerate(contents):
 
-                print(td.text[:3])
+                # テーブル番号、列番号を設定
                 if directory[td.text[:3]][2] == '1':
                     changeTable = table1
                     columnNum   = 2 + i
@@ -96,12 +96,14 @@ def editPPTable(iniFile, table1, table2, inputTable):
                     changeTable = table2
                     columnNum   = 1 + i
 
-                print(td.text[:3])
+                # テキストを設定
                 changeCell = changeTable.cell(rowNum, columnNum)
                 changeCell.text = chageStr(content.get_text('.').split('.'))
-                changeFontSize(changeCell, 10)
 
+                # レイアウトを修正
+                changeLayout(changeCell, 10)
 
+    # いつかやる
     # table2.cell(1, 3).merge(table2.cell(2, 3))
 
 # CSVを取得
@@ -133,7 +135,7 @@ def getDirectory(csvPath):
 
 
 # ファイルネームを生成
-def judgeFileName():
+def createFileName():
 
     # 曜日
     yobi = ["月","火","水","木","金","土","日"]
