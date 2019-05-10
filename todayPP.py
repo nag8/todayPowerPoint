@@ -14,11 +14,6 @@ import csv
 # メイン処理
 def main():
 
-    # 参照
-    # https://python-pptx.readthedocs.io/en/latest/user/table.html
-    # https://qiita.com/hujuu/items/b0339404b8b0460087f9
-    # https://stackoverflow.com/questions/40343921/python-pptx-change-entire-table-font-size
-
     # 設定ファイル取得
     iniFile = getIniFile()
 
@@ -98,7 +93,7 @@ def editPPTable(iniFile, table1, table2, inputTable):
 
                 # テキストを設定
                 changeCell = changeTable.cell(rowNum, columnNum)
-                changeCell.text = chageStr(content.get_text('.').split('.'))
+                changeCell.text = changeStr(content.get_text('.').split('.'))
 
                 # レイアウトを修正
                 changeLayout(changeCell, 10)
@@ -106,8 +101,8 @@ def editPPTable(iniFile, table1, table2, inputTable):
     # いつかやる
     # table2.cell(1, 3).merge(table2.cell(2, 3))
 
-# CSVを取得
-def chageStr(strList):
+# 文字を取得
+def changeStr(strList):
 
     if len(strList) >= 2:
         return strList[1] + '\n（' + strList[0] + '　様）'
