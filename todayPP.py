@@ -14,12 +14,15 @@ import csv
 # メイン処理
 def main():
 
+    print('処理開始！')
+
     # 設定ファイル取得
     iniFile = getIniFile()
 
     # PowerPointファイルを生成
     createPP(iniFile)
 
+    print('処理終了！')
 
 # 設定ファイル取得
 def getIniFile():
@@ -75,34 +78,63 @@ def editPPTable(iniFile, table1, table2, inputTable):
 
     for td in tdList:
 
+
+        print('----------------------------------')
+
         # 行番号を取得。なければ飛ばす
         if directory[td.text[:3]][1] != '':
             rowNum = int(directory[td.text[:3]][1])
 
-            contents = td.parent.findAll("td", attrs = {"class": "p11"})
-            for i,content in enumerate(contents):
+            # テーブル番号、列番号を設定
+            if directory[td.text[:3]][2] == '1':
+                changeTable = table1
+                columnNum   = 2
 
-                # テーブル番号、列番号を設定
-                if directory[td.text[:3]][2] == '1':
-                    changeTable = table1
-                    columnNum   = 2 + i
+            else:
+                changeTable = table2
+                columnNum   = 1
+
+
+            targetTdList = td.parent.findAll("td")
+
+            # 闇の魔術その2
+            targetTdList.pop(0)
+
+            for i, targetTd in enumerate(targetTdList):
+                # コマの順番
+                cellNum = 0
+
+                if targetTd.find("table"):
+                    print(targetTd.find("td", attrs = {"class": "p11"}))
+
+                    # 闇の魔術。tableの後ろにtdがあるので削除。findAllでそもそも取得されないようにしたい・・・・
+                    targetTdList.pop(i + 1)
+
+                    changeCell = changeTable.cell(rowNum, columnNum + getCellTime())
+                    changeCell.text = getStr(targetTd.find("td", attrs = {"class": "p11"}))
+                    changeLayout(changeCell, 10)
+
 
                 else:
-                    changeTable = table2
-                    columnNum   = 1 + i
+                    print("空セル")
 
-                # テキストを設定
-                changeCell = changeTable.cell(rowNum, columnNum)
-                changeCell.text = changeStr(content.get_text('.').split('.'))
-
-                # レイアウトを修正
-                changeLayout(changeCell, 10)
 
     # いつかやる
     # table2.cell(1, 3).merge(table2.cell(2, 3))
 
+# コマを取得
+def getCellTime(targetTdList):
+
+
 # 文字を取得
-def changeStr(strList):
+def getStr(content):
+
+    # 内容を取得
+    strList = content.get_text(';').split(';')
+
+    # 未入金の場合があるので、それを削除
+    if strList[0] == '未':
+        strList.pop(0)
 
     if len(strList) >= 2:
         return strList[1] + '\n（' + strList[0] + '　様）'
