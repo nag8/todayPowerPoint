@@ -81,49 +81,100 @@ def editPPTable(iniFile, table1, table2, inputTable):
 
         print('----------------------------------')
 
+        # どこの表に渡せばいいかリスト
+        dicList = directory[td.text[:3]]
+        print(dicList[0])
+
         # 行番号を取得。なければ飛ばす
-        if directory[td.text[:3]][1] != '':
-            rowNum = int(directory[td.text[:3]][1])
-
-            # テーブル番号、列番号を設定
-            if directory[td.text[:3]][2] == '1':
-                changeTable = table1
-                columnNum   = 2
-
-            else:
-                changeTable = table2
-                columnNum   = 1
+        if dicList[1] != '':
+            rowNum = int(dicList[1])
 
 
             targetTdList = td.parent.findAll("td")
 
-            # 闇の魔術その2
+            # 闇の魔術
             targetTdList.pop(0)
+
+            cellNum = 0
 
             for i, targetTd in enumerate(targetTdList):
                 # コマの順番
-                cellNum = 0
 
+                # 対象内にテーブル要素がある場合
                 if targetTd.find("table"):
-                    print(targetTd.find("td", attrs = {"class": "p11"}))
 
                     # 闇の魔術。tableの後ろにtdがあるので削除。findAllでそもそも取得されないようにしたい・・・・
                     targetTdList.pop(i + 1)
 
-                    changeCell = changeTable.cell(rowNum, columnNum + getCellTime())
-                    changeCell.text = getStr(targetTd.find("td", attrs = {"class": "p11"}))
-                    changeLayout(changeCell, 10)
+                    # セルの大きさを追加
+                    cellNum += int(targetTd.get('colspan'))
+
+                    # 表1の設定を初期設定にする
+                    changeTable = table1
+                    columnNum   = 2
+
+                    # セルの種類。元のテンプレートが複数種類あるので、それに対応
+                    tdId = dicList[2]
+
+                    # 展示ギャラリーの場合
+                    if tdId in ['1','2','3']:
+                        # 1日貸出のため、特に考慮する必要なし
+                        pass
+
+                    # 通常の施設の場合（会議室など）
+                    elif tdId == '2':
+
+                        # 取りうるパターン。これに空セルの場合も入る。戦略的後回し
+                        # 3,1,3,1,2
+                        # 7,1,2
+                        # 3,1,6
+                        # 10
+                        targetList = getNormalList()
+
+                        pass
+
+                    # 音楽スタジオの場合
+                    elif tdId == '3':
+
+                        # 取りうるパターン
+
+                        pass
 
 
+                    else:
+                        changeTable = table2
+                        columnNum   = 1
+
+                        # 始まりセルを設定
+                        startNum = cellNum - int(targetTd.get('colspan')) + 1
+
+                        if targetTd.get('colspan') != '1':
+                            print('merge → ')
+
+                            print('rowNum' + str(rowNum) + 'startNum' + str(startNum) + 'cellNum' + str(cellNum))
+                            # 通常の予定入力の場合
+
+                            changeCell = changeTable.cell(rowNum, startNum)
+                            changeCell.text = getStr(targetTd.find("td", attrs = {"class": "p11"}))
+                            changeLayout(changeCell, 12)
+
+                            if changeCell.is_merge_origin:
+                                changeCell.split()
+
+                            # changeCell.merge(changeTable.cell(rowNum, cellNum))
+
+                            pass
+
+
+
+                    print('順序 → ' + str(cellNum) + ' ;長さ → ' + targetTd.get('colspan') + ' ; ' + targetTd.find("td", attrs = {"class": "p11"}).get_text(' ; '))
+
+                # 空セルの場合
                 else:
-                    print("空セル")
+                    cellNum += 1
+                    print("順序 → " + str(cellNum) + ' ; 空セル')
+                    # print(changeCell.is_merge_origin)
 
-
-    # いつかやる
-    # table2.cell(1, 3).merge(table2.cell(2, 3))
-
-# コマを取得
-def getCellTime(targetTdList):
 
 
 # 文字を取得
