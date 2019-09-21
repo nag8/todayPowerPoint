@@ -11,10 +11,6 @@ import datetime
 import csv
 import subprocess
 
-# fullNameTable = str.maketrans(
-#     '小林信義': '小林',
-#     '東　孝一郎': '東',
-#     '水田康弘': '水田')
 
 # メイン処理
 def main():
@@ -94,7 +90,7 @@ def editPPTable(iniFile, table1, table2, inputTable):
             rowNum = int(directory[td.text[:3]][1])
 
             # 部屋の名前をログ出力
-            print('----------------------------------')
+            print('---------------------　-------------')
             print('部屋→→→→→→→→→→    ' + directory[td.text[:3]][0])
 
             # 要素を取得
